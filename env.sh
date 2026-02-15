@@ -15,6 +15,7 @@ echo "metarepo root: $myroot"
 
 # Set meta repo root
 export CASCADE_META_ROOT=$myroot
+export CASCADE_WORKSPACE_ROOT=$(dirname "$CASCADE_META_ROOT")
 
 # Where are the design submodules located
 export CASCADE_DESIGN_PROCESSING_ROOT=$CASCADE_META_ROOT/design-processing
@@ -26,13 +27,15 @@ unset CASCADE_DESIGN
 
 # Where to install the binaries and other files of all the tools
 # (compiler toolchain, verilator, sv2v, etc.)
-export PREFIX_CASCADE=$HOME/prefix-cascade
+if [ -z "${PREFIX_CASCADE+x}" ] || [ "$PREFIX_CASCADE" = "$HOME/prefix-cascade" ]; then
+    export PREFIX_CASCADE=$CASCADE_WORKSPACE_ROOT/prefix-cascade
+fi
 
 # How many parallel jobs would you like to have issued?
 export CASCADE_JOBS=250 # Feel free to change this
 
 # Where to store a lot of data?
-export CASCADE_DATADIR=$CASCADE_META_ROOT/experimental-data # Feel free to change this
+export CASCADE_DATADIR=$CASCADE_WORKSPACE_ROOT/cascade-data # Feel free to change this
 
 # Where the common HDL processing Python scripts are located.
 export CASCADE_PYTHON_COMMON=$CASCADE_DESIGN_PROCESSING_ROOT/common/python_scripts
@@ -109,7 +112,7 @@ then
     export CASCADE_JOBS=250
 
     ulimit -n 10000 # many FD's
-    export CASCADE_DATADIR=/cascade-data
+    export CASCADE_DATADIR=$CASCADE_WORKSPACE_ROOT/cascade-data
 fi
 
 # Where should our python venv be?
@@ -138,6 +141,13 @@ export CASCADE_YS=$CASCADE_DESIGN_PROCESSING_ROOT/common/yosys
 # use which compiler?
 export CASCADE_GCC=riscv32-unknown-elf-gcc
 export CASCADE_OBJDUMP=riscv32-unknown-elf-objdump
+
+# Local Spike (Cascade tools submodule)
+if [ -x "$CASCADE_META_ROOT/tools/riscv-isa-sim/build/spike" ]; then
+    export SPIKE=$CASCADE_META_ROOT/tools/riscv-isa-sim/build/spike
+else
+    export SPIKE=${SPIKE:-$CASCADE_META_ROOT/tools/riscv-isa-sim/build/spike}
+fi
 
 # use libstdc++ in this prefix
 export LD_LIBRARY_PATH=$PREFIX_CASCADE/lib64:$LD_LIBRARY_PATH

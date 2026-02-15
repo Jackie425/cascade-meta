@@ -14,6 +14,9 @@ from functools import cache
 SPIKE_STARTADDR = 0x80000000
 SPIKE_MEDELEG_MASK = 0xb3ff
 
+def _get_spike_exec() -> str:
+    return os.environ.get('SPIKE', 'spike')
+
 ###
 # Helper functions
 ###
@@ -133,7 +136,7 @@ def run_trace_regs_at_pc_locs(identifier_str: str, elfpath: str, rvflags: str, s
 
     # Second, run the Spike command
     spike_shell_command = (
-        "spike",
+        _get_spike_exec(),
         "-d",
         f"--debug-cmd={path_to_debug_file}",
         f"--isa={rvflags}",
@@ -194,7 +197,7 @@ def run_trace_all_pcs(identifier_str: str, elfpath: str, rvflags: str, numinstrs
     
     # Second, run the Spike command
     spike_shell_command = (
-        "spike",
+        _get_spike_exec(),
         "-d",
         f"--debug-cmd={path_to_debug_file}",
         f"--isa={rvflags}",
@@ -256,7 +259,7 @@ def get_spike_timeout_seconds() -> int:
 
 # @brief Runs a spike instance and returns the average nanoseconds per instruction.
 @cache
-def calibrate_spikespeed(numinstrs:int = 10000) -> list:
+def calibrate_spikespeed(numinstrs:int = 10000, rvflags: str = 'rv32i') -> list:
     global __spike_ns_per_instr
     from common.bytestoelf import gen_elf
     from rv.rv32i import rv32i_jal
@@ -271,10 +274,10 @@ def calibrate_spikespeed(numinstrs:int = 10000) -> list:
 
     # Run the Spike command
     spike_shell_command = (
-        "spike",
+        _get_spike_exec(),
         "-d",
         f"--debug-cmd={path_to_debug_file}",
-        f"--isa={'rv32i'}",
+        f"--isa={rvflags}",
         f"--pc={SPIKE_STARTADDR}",
         elfpath
     )

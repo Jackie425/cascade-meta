@@ -13,6 +13,7 @@
 [submodule "tools/makeelf"]
 	path = tools/makeelf
 	url = https://github.com/flaviens/makeelf
+	ignore = untracked
 [submodule "tools/verilator"]
 	path = tools/verilator
 	url = https://github.com/verilator/verilator.git

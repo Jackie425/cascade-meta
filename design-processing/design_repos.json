@@ -10,6 +10,7 @@
     "kronos": "../../cascade-designs/cascade-kronos/cascade",
     "kronos-k1": "../../cascade-designs/cascade-kronos-k1/cascade",
     "kronos-k2": "../../cascade-designs/cascade-kronos-k2/cascade",
+    "ibex": "../../cascade-designs/cascade-ibex/cascade",
     "vexriscv": "../../cascade-designs/cascade-vexriscv/cascade",
     "vexriscv-v1-7": "../../cascade-designs/cascade-vexriscv-v1-7/cascade",
     "vexriscv-v8-9-v15": "../../cascade-designs/cascade-vexriscv-v8-9-v15/cascade",

@@ -53,8 +53,23 @@ def get_design_march_ccflags(design_name) -> int:
 def get_design_march_flags(design_name) -> str:
     return get_design_march_ccflags(design_name).split('-march=')[1].split(' ')[0].lower()
 
+def _get_base_isa_letters(design_name) -> str:
+    march_flags = get_design_march_flags(design_name)
+    base_isa = march_flags.split('_')[0]
+    if not (base_isa.startswith('rv32') or base_isa.startswith('rv64')):
+        return base_isa
+    return base_isa[4:]
+
 def get_design_march_flags_nocompressed(design_name) -> str:
-    return get_design_march_ccflags(design_name).split('-march=')[1].split(' ')[0].lower().replace('c', '')
+    march_flags = get_design_march_ccflags(design_name).split('-march=')[1].split(' ')[0].lower()
+    parts = march_flags.split('_')
+    base_isa = parts[0]
+    if base_isa.startswith('rv32') or base_isa.startswith('rv64'):
+        prefix = base_isa[:4]
+        suffix = base_isa[4:]
+        base_isa = prefix + suffix.replace('c', '')
+    parts[0] = base_isa
+    return '_'.join(parts)
 
 # @param design_name: must be one of the keys of the design_repos.json dict.
 # @return the stop signal address of the design: the address to which to write to stop the simulation.
@@ -84,23 +99,27 @@ def is_design_32bit(design_name) -> bool:
 
 @cache
 def design_has_float_support(design_name) -> bool:
-    return 'f' in get_design_march_flags(design_name) or 'g' in get_design_march_flags(design_name)
+    base_letters = _get_base_isa_letters(design_name)
+    return 'f' in base_letters or 'g' in base_letters
 
 @cache
 def design_has_double_support(design_name) -> bool:
-    return 'd' in get_design_march_flags(design_name) or 'g' in get_design_march_flags(design_name)
+    base_letters = _get_base_isa_letters(design_name)
+    return 'd' in base_letters or 'g' in base_letters
 
 @cache
 def design_has_muldiv_support(design_name) -> bool:
-    return 'm' in get_design_march_flags(design_name) or 'g' in get_design_march_flags(design_name)
+    base_letters = _get_base_isa_letters(design_name)
+    return 'm' in base_letters or 'g' in base_letters
 
 @cache
 def design_has_atop_support(design_name) -> bool:
-    return 'a' in get_design_march_flags(design_name) or 'g' in get_design_march_flags(design_name)
+    base_letters = _get_base_isa_letters(design_name)
+    return 'a' in base_letters or 'g' in base_letters
 
 @cache
 def design_has_compressed_support(design_name) -> bool:
-    return 'c' in get_design_march_flags(design_name)
+    return 'c' in _get_base_isa_letters(design_name)
 
 def design_has_misaligned_data_support(design_name) -> bool:
     device_config = get_design_cfg(design_name)
