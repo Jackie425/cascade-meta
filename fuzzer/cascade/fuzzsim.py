@@ -27,7 +27,7 @@ SETUP_CYCLES = 1000 # Without this, we had issues with BOOM with very short prog
 
 # @param get_rfuzz_coverage_mask if True, then return a pair (is_stop_successful: bool, rfuzz_coverage_mask: int)
 # Return a pair (is_stop_successful: bool, reg_vals: int list of length <= MAX_NUM_PICKABLE_REGS-1 or None if is_stop_successful is False)
-def runsim_verilator(design_name, simlen, elfpath, num_int_regs: int = MAX_NUM_PICKABLE_REGS-1, num_float_regs: int = MAX_NUM_PICKABLE_FLOATING_REGS, coveragepath = None, get_rfuzz_coverage_mask = False):
+def runsim_verilator(design_name, simlen, elfpath, num_int_regs: int = MAX_NUM_PICKABLE_REGS-1, num_float_regs: int = MAX_NUM_PICKABLE_FLOATING_REGS, coveragepath = None, get_rfuzz_coverage_mask = False, pcov_memory_path: str = None):
     if DO_ASSERT:
         assert coveragepath is None or not get_rfuzz_coverage_mask
 
@@ -36,6 +36,10 @@ def runsim_verilator(design_name, simlen, elfpath, num_int_regs: int = MAX_NUM_P
     builddir         = os.path.join(cascadedir,'build')
 
     my_env = setup_sim_env(elfpath, '/dev/null', '/dev/null', simlen, cascadedir, coveragepath, False)
+    if pcov_memory_path:
+        my_env["PCOV_MEMORY_FILE"] = pcov_memory_path
+    else:
+        my_env.pop("PCOV_MEMORY_FILE", None)
 
     simdir               = f"run_{'coverage' if coveragepath else 'rfuzz' if get_rfuzz_coverage_mask else 'vanilla'}_notrace_0.1"
     verilatordir         = 'default-verilator'

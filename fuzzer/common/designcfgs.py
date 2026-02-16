@@ -43,6 +43,19 @@ def get_design_boot_addr(design_name) -> int:
     return int(device_config["bootaddr"], base=0)
 
 # @param design_name: must be one of the keys of the design_repos.json dict.
+# @return the reset entry offset from the boot address (defaults to 0).
+def get_design_reset_entry_offset(design_name) -> int:
+    device_config = get_design_cfg(design_name)
+    if "resetentryoffset" in device_config:
+        return int(device_config["resetentryoffset"], base=0)
+    return 0
+
+# @param design_name: must be one of the keys of the design_repos.json dict.
+# @return the spike start PC of the design.
+def get_design_spike_start_pc(design_name) -> int:
+    return get_design_boot_addr(design_name) + get_design_reset_entry_offset(design_name)
+
+# @param design_name: must be one of the keys of the design_repos.json dict.
 # @return the march flags for the design, for example `-march=rv64gc -mabi=lp64`.
 def get_design_march_ccflags(design_name) -> int:
     device_config = get_design_cfg(design_name)

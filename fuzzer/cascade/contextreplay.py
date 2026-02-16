@@ -8,7 +8,6 @@ from dataclasses import dataclass
 from params.runparams import DO_ASSERT
 from params.fuzzparams import MAX_NUM_PICKABLE_REGS, MPP_TOP_ENDIS_REGISTER_ID, MPP_BOTH_ENDIS_REGISTER_ID
 from rv.csrids import CSR_IDS
-from common.spike import SPIKE_STARTADDR
 from cascade.privilegestate import PrivilegeStateEnum
 from cascade.cfinstructionclasses import ImmRdInstruction, RegImmInstruction, IntLoadInstruction, IntStoreInstruction, FloatLoadInstruction, CSRRegInstruction, JALInstruction, RawDataWord, PrivilegeDescentInstruction
 from cascade.randomize.pickstoreaddr import ALIGNMENT_BITS_MAX
@@ -431,7 +430,7 @@ def gen_context_setter(fuzzerstate, saved_context, next_jmp_addr: int):
     for mem_byte_id, (mem_byte_addr, mem_byte_val) in enumerate(saved_context.mem_bytes_dict.items()):
         # Set the address of the mem byte
         fuzzerstate.ctxsv_bb[addr_to_id_in_ctxsv(addrs_memaddrs[mem_byte_id])] = RegImmInstruction("addi", 1, MAX_NUM_PICKABLE_REGS, curr_addr-fuzzerstate.ctxsv_bb_base_addr, fuzzerstate.is_design_64bit, is_rd_nonpickable_ok=True)
-        fuzzerstate.ctxsv_bb.append(RawDataWord(mem_byte_addr + SPIKE_STARTADDR))
+        fuzzerstate.ctxsv_bb.append(RawDataWord(mem_byte_addr + fuzzerstate.design_base_addr))
         curr_addr += 4 # NO_COMPRESSED
 
     # Set the fpu register values here. Use the register 1 to load the address, arbitrarily.

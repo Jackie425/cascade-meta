@@ -47,8 +47,12 @@ def gen_initial_basic_block(fuzzerstate, offset_addr: int, csr_init_rounding_mod
             fuzzerstate.add_instruction(CSRRegInstruction("csrrw", 0, 0, CSR_IDS.MEDELEG))
             curr_addr += 4
 
-        # Write 0 to mtvec and stvec to uniformize across designs. This must be done in initialblock to facilitate the analysis.
-        if fuzzerstate.design_name != 'picorv32':
+        # Write 0 to mtvec and stvec to uniformize across designs. This must be done in
+        # initialblock to facilitate the analysis.
+        # Ibex is special: its reset mtvec is tied to boot_addr. Overwriting it with zero can
+        # route asynchronous/accidental exceptions to low memory (e.g. 0x0), which hurts
+        # liveness and causes timeout-heavy runs.
+        if fuzzerstate.design_name not in ('picorv32', 'ibex'):
             fuzzerstate.add_instruction(CSRRegInstruction("csrrw", 0, 0, CSR_IDS.MTVEC))
             curr_addr += 4
         if fuzzerstate.design_has_supervisor_mode:

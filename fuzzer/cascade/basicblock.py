@@ -5,7 +5,6 @@
 # This script is responsible for generating the basic blocks
 
 from params.runparams import DO_ASSERT
-from common.spike import SPIKE_STARTADDR
 from rv.csrids import CSR_IDS
 from params.fuzzparams import BRANCH_TAKEN_PROBA, LIMIT_MEM_SATURATION_RATIO, RANDOM_DATA_BLOCK_MIN_SIZE_BYTES, RANDOM_DATA_BLOCK_MAX_SIZE_BYTES
 from cascade.randomize.createcfinstr import create_instr, create_regfsm_instrobjs
@@ -33,7 +32,7 @@ def gen_basicblocks(fuzzerstate):
     while True:
 
         fuzzerstate.reset()
-        gen_initial_basic_block(fuzzerstate, SPIKE_STARTADDR)
+        gen_initial_basic_block(fuzzerstate, fuzzerstate.design_base_addr)
         fuzzerstate.save_reg_state()
         # Sanity checks
         assert fuzzerstate.get_num_fuzzing_instructions_sofar() == 0, "We should have generated only one basic block so far."

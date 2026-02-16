@@ -5,7 +5,6 @@
 # This module provides facilities for reducing test cases
 
 from common.designcfgs import get_design_march_flags_nocompressed, get_design_boot_addr, get_design_cascade_path
-from common.spike import SPIKE_STARTADDR
 from cascade.basicblock import gen_basicblocks
 from cascade.cfinstructionclasses import JALInstruction, RegImmInstruction
 from cascade.fuzzsim import SimulatorEnum, runtest_simulator
@@ -30,10 +29,10 @@ FLATTEN_SANDWICH_INSTRUCTIONS = False # Not fully implemented & tested, hence do
 # Used for removing the first BBs and instructions.
 def _save_ctx_and_jump_to_pillar_specific_instr(fuzzerstate, index_first_bb_to_consider: int, index_first_instr_to_consider: int):
     print(f"Saving context and jumping to pillar-specific instruction {index_first_bb_to_consider}:{index_first_instr_to_consider}...")
-    spikereduce_elfpath = gen_elf_from_bbs(fuzzerstate, False, "spikereduce_savectx", f"{fuzzerstate.instance_to_str()}_{index_first_bb_to_consider}_{index_first_instr_to_consider}", SPIKE_STARTADDR)
+    spikereduce_elfpath = gen_elf_from_bbs(fuzzerstate, False, "spikereduce_savectx", f"{fuzzerstate.instance_to_str()}_{index_first_bb_to_consider}_{index_first_instr_to_consider}", fuzzerstate.design_base_addr)
 
     ctx_regdump_reqs, storenumbytes = gen_ctx_regdump_reqs(fuzzerstate, index_first_bb_to_consider, index_first_instr_to_consider)
-    dumpedvals = run_trace_regs_at_pc_locs(fuzzerstate.instance_to_str(), spikereduce_elfpath, get_design_march_flags_nocompressed(fuzzerstate.design_name), SPIKE_STARTADDR, ctx_regdump_reqs, False, fuzzerstate.final_bb_base_addr+SPIKE_STARTADDR, fuzzerstate.num_pickable_floating_regs if fuzzerstate.design_has_fpu else 0, fuzzerstate.design_has_fpud)
+    dumpedvals = run_trace_regs_at_pc_locs(fuzzerstate.instance_to_str(), spikereduce_elfpath, get_design_march_flags_nocompressed(fuzzerstate.design_name), fuzzerstate.spike_start_pc, ctx_regdump_reqs, False, fuzzerstate.final_bb_base_addr+fuzzerstate.design_base_addr, fuzzerstate.num_pickable_floating_regs if fuzzerstate.design_has_fpu else 0, fuzzerstate.design_has_fpud)
 
     del ctx_regdump_reqs
 
@@ -55,7 +54,7 @@ def _save_ctx_and_jump_to_pillar_specific_instr(fuzzerstate, index_first_bb_to_c
     curr_id_in_storenumbytes = 0
     for _ in range(num_stores_found):
         for byte_id in range(storenumbytes[curr_id_in_storenumbytes]):
-            addr = dumpedvals[curr_id_in_dumpedvals] + byte_id - SPIKE_STARTADDR
+            addr = dumpedvals[curr_id_in_dumpedvals] + byte_id - fuzzerstate.design_base_addr
             val = (dumpedvals[curr_id_in_dumpedvals+1] >> (8*byte_id)) & 0xFF
             saved_stores[addr] = val
         curr_id_in_storenumbytes += 1
@@ -219,9 +218,9 @@ def gen_reduced_elf(fuzzerstate, max_bb_id_to_consider: int, max_instr_id_except
         # storenumbytes is a list which, for each store operation, returns the number of bytes stored
         test_fuzzerstate = _save_ctx_and_jump_to_pillar_specific_instr(test_fuzzerstate, index_first_bb_to_consider, index_first_instr_to_consider)
 
-        spikereduce_elfpath = gen_elf_from_bbs(test_fuzzerstate, False, "spikereduce_reducedstart", f"{test_fuzzerstate.instance_to_str()}_{max_bb_id_to_consider}_{max_instr_id_except_cf}_{index_first_bb_to_consider}_{index_first_instr_to_consider}", SPIKE_STARTADDR)
+        spikereduce_elfpath = gen_elf_from_bbs(test_fuzzerstate, False, "spikereduce_reducedstart", f"{test_fuzzerstate.instance_to_str()}_{max_bb_id_to_consider}_{max_instr_id_except_cf}_{index_first_bb_to_consider}_{index_first_instr_to_consider}", test_fuzzerstate.design_base_addr)
     else:
-        spikereduce_elfpath = gen_elf_from_bbs(test_fuzzerstate, False, "spikereduce", f"{test_fuzzerstate.instance_to_str()}_{max_bb_id_to_consider}_{max_instr_id_except_cf}_{index_first_bb_to_consider}_{index_first_instr_to_consider}", SPIKE_STARTADDR)
+        spikereduce_elfpath = gen_elf_from_bbs(test_fuzzerstate, False, "spikereduce", f"{test_fuzzerstate.instance_to_str()}_{max_bb_id_to_consider}_{max_instr_id_except_cf}_{index_first_bb_to_consider}_{index_first_instr_to_consider}", test_fuzzerstate.design_base_addr)
 
     ###
     # Generate the ELF for RTL
@@ -230,7 +229,7 @@ def gen_reduced_elf(fuzzerstate, max_bb_id_to_consider: int, max_instr_id_except
     regdump_reqs = gen_regdump_reqs_reduced(test_fuzzerstate, max_bb_id_to_consider, max_instr_id_except_cf+1, index_first_bb_to_consider, index_first_instr_to_consider)
 
     # This is only needed for generating the final reg and freg values iirc.
-    _, (finalintregvals_spikeresol, finalfloatregvals_spikeresol) = run_trace_regs_at_pc_locs(test_fuzzerstate.instance_to_str(), spikereduce_elfpath, get_design_march_flags_nocompressed(test_fuzzerstate.design_name), SPIKE_STARTADDR, regdump_reqs, True, test_fuzzerstate.final_bb_base_addr+SPIKE_STARTADDR, test_fuzzerstate.num_pickable_floating_regs if test_fuzzerstate.design_has_fpu else 0, test_fuzzerstate.design_has_fpud)
+    _, (finalintregvals_spikeresol, finalfloatregvals_spikeresol) = run_trace_regs_at_pc_locs(test_fuzzerstate.instance_to_str(), spikereduce_elfpath, get_design_march_flags_nocompressed(test_fuzzerstate.design_name), test_fuzzerstate.spike_start_pc, regdump_reqs, True, test_fuzzerstate.final_bb_base_addr+test_fuzzerstate.design_base_addr, test_fuzzerstate.num_pickable_floating_regs if test_fuzzerstate.design_has_fpu else 0, test_fuzzerstate.design_has_fpud)
 
     rtl_elfpath = spikereduce_elfpath
 

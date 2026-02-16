@@ -4,8 +4,7 @@
 
 from params.runparams import DO_ASSERT
 from params.fuzzparams import RELOCATOR_REGISTER_ID, RDEP_MASK_REGISTER_ID, FPU_ENDIS_REGISTER_ID, MIN_NUM_PICKABLE_REGS, MAX_NUM_PICKABLE_REGS, MIN_NUM_PICKABLE_FLOATING_REGS, MAX_NUM_PICKABLE_FLOATING_REGS, MPP_BOTH_ENDIS_REGISTER_ID, MPP_TOP_ENDIS_REGISTER_ID, SPP_ENDIS_REGISTER_ID, MAX_NUM_STORE_LOCATIONS
-from common.designcfgs import is_design_32bit, design_has_float_support, design_has_double_support, design_has_muldiv_support, design_has_atop_support, design_has_misaligned_data_support, get_design_boot_addr, design_has_supervisor_mode, design_has_user_mode, design_has_compressed_support, design_has_pmp
-from common.spike import SPIKE_STARTADDR
+from common.designcfgs import is_design_32bit, design_has_float_support, design_has_double_support, design_has_muldiv_support, design_has_atop_support, design_has_misaligned_data_support, get_design_reset_entry_offset, get_design_spike_start_pc, design_has_supervisor_mode, design_has_user_mode, design_has_compressed_support, design_has_pmp
 
 from cascade.util import ISAInstrClass, ExceptionCauseVal
 from cascade.memview import MemoryView
@@ -31,6 +30,8 @@ class FuzzerState:
 
         self.design_name = design_name
         self.design_base_addr = design_base_addr
+        self.design_reset_entry_offset = get_design_reset_entry_offset(design_name)
+        self.spike_start_pc = get_design_spike_start_pc(design_name)
         self.is_design_64bit = not is_design_32bit(design_name)
         self.design_has_compressed_support     : bool = design_has_compressed_support(design_name)
         self.design_has_fpu                    : bool = design_has_float_support(design_name)
@@ -51,7 +52,7 @@ class FuzzerState:
         self.initial_block_data_start, self.initial_block_data_end = None, None
         self.random_block_content4by4bytes = []
 
-        self.next_bb_addr = 0
+        self.next_bb_addr = self.design_reset_entry_offset
         self.memview = MemoryView(self.memsize)
         self.memview_blacklist = MemoryView(self.memsize) # For load blacklist
 
